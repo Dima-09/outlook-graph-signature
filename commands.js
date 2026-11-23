@@ -109,9 +109,10 @@ async function applySignatureEvent(event) {
     if (!msalInstance) {
       msalInstance = new msal.PublicClientApplication(msalConfig);
     }
-    const user = await getGraphUserProfile();
-    const signatureHtml = buildSignatureHtml(user);
-    await setItemSignature(signatureHtml);
+    // const user = await getGraphUserProfile();
+    // const signatureHtml = buildSignatureHtml(user);
+    // await setItemSignature(signatureHtml);
+    await setItemSignature('<div><strong>TEST SIGNATURE</strong></div>');
   } catch (err) {
     console.error('Auto-signature error:', err);
   } finally {

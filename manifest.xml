@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <OfficeApp
   xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -32,14 +32,6 @@
     </Sets>
   </Requirements>
 
-  <FormSettings>
-    <Form xsi:type="ItemEdit">
-      <DesktopSettings>
-        <SourceLocation DefaultValue="https://dima-09.github.io/outlook-graph-signature/commands.html"/>
-      </DesktopSettings>
-    </Form>
-  </FormSettings>
-
   <Permissions>ReadWriteItem</Permissions>
 
   <Rule xsi:type="RuleCollection" Mode="Or">
@@ -59,16 +51,16 @@
       <Hosts>
         <Host xsi:type="MailHost">
           <Runtimes>
-            <Runtime resid="CommandsUrl">
-              <Override type="javascript" resid="CommandsJsUrl"/>
-            </Runtime>
+            <Runtime resid="CommandsUrl" lifetime="short"/>
           </Runtimes>
 
           <DesktopFormFactor>
-            <FunctionFile resid="CommandsUrl"/>
-            <ExtensionPoint xsi:type="Events">
-              <Event Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler"/>
-              <Event Type="OnMessageRecipientsChanged" FunctionName="onMessageRecipientsChangedHandler"/>
+            <ExtensionPoint xsi:type="LaunchEvent">
+              <LaunchEvents>
+                <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler"/>
+                <LaunchEvent Type="OnMessageRecipientsChanged" FunctionName="onMessageRecipientsChangedHandler"/>
+              </LaunchEvents>
+              <SourceLocation resid="CommandsUrl"/>
             </ExtensionPoint>
           </DesktopFormFactor>
         </Host>
@@ -82,8 +74,13 @@
         </bt:Images>
         <bt:Urls>
           <bt:Url id="CommandsUrl" DefaultValue="https://dima-09.github.io/outlook-graph-signature/commands.html"/>
-          <bt:Url id="CommandsJsUrl" DefaultValue="https://dima-09.github.io/outlook-graph-signature/commands.js"/>
         </bt:Urls>
+        <bt:ShortStrings>
+          <bt:String id="FuncGroupLabel" DefaultValue="BDO Auto Signature"/>
+        </bt:ShortStrings>
+        <bt:LongStrings>
+          <bt:String id="FuncGroupDesc" DefaultValue="Автоматическая подстановка подписи BDO Qazaqstan"/>
+        </bt:LongStrings>
       </Resources>
     </VersionOverrides>
   </VersionOverrides>

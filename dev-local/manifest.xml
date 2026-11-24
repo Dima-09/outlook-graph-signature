@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides"
+  xsi:type="MailApp">
+
+  <!-- Replace only this GUID with your permanent add-in ID. -->
+  <Id>1fc85d51-adc1-4c34-b237-4ae862c61f56</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>BDO Qazaqstan</ProviderName>
+  <DefaultLocale>ru-RU</DefaultLocale>
+  <DisplayName DefaultValue="BDO Auto Signature DEV"/>
+  <Description DefaultValue="Automatic corporate email signature for Outlook"/>
+
+  <IconUrl DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-80.png"/>
+  <SupportUrl DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.html"/>
+
+  <AppDomains>
+    <AppDomain>https://dima-09.github.io</AppDomain>
+  </AppDomains>
+
+  <Hosts>
+    <Host Name="Mailbox"/>
+  </Hosts>
+
+  <!-- Base requirement, in the default OfficeApp XML namespace. -->
+  <Requirements>
+    <Sets DefaultMinVersion="1.1">
+      <Set Name="Mailbox"/>
+    </Sets>
+  </Requirements>
+
+  <!-- Required in add-in-only manifests even when VersionOverrides is used. -->
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.html"/>
+        <RequestedHeight>250</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+
+  <Permissions>ReadWriteItem</Permissions>
+  <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
+  <DisableEntityHighlighting>true</DisableEntityHighlighting>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1" xsi:type="VersionOverridesV1_1">
+      <!-- Mobile requires a lower minimum than desktop's OnNewMessageCompose API. -->
+      <Requirements>
+        <bt:Sets DefaultMinVersion="1.10">
+          <bt:Set Name="Mailbox"/>
+        </bt:Sets>
+      </Requirements>
+      <Hosts>
+        <Host xsi:type="MailHost">
+          <Runtimes>
+            <!-- Browser runtime: Outlook Web, new Outlook, and mobile. -->
+            <Runtime resid="WebRuntime.Url">
+              <!-- Classic Outlook requires a JS-only bundle at this URL. -->
+              <Override type="javascript" resid="JavaScriptRuntime.Url"/>
+            </Runtime>
+          </Runtimes>
+
+          <DesktopFormFactor>
+            <ExtensionPoint xsi:type="LaunchEvent">
+              <LaunchEvents>
+                <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler"/>
+              </LaunchEvents>
+              <SourceLocation resid="WebRuntime.Url"/>
+            </ExtensionPoint>
+          </DesktopFormFactor>
+
+          <MobileFormFactor>
+            <ExtensionPoint xsi:type="LaunchEvent">
+              <LaunchEvents>
+                <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler"/>
+              </LaunchEvents>
+              <SourceLocation resid="WebRuntime.Url"/>
+            </ExtensionPoint>
+          </MobileFormFactor>
+        </Host>
+      </Hosts>
+
+      <Resources>
+        <bt:Images>
+          <bt:Image id="Icon16" DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-16.png"/>
+          <bt:Image id="Icon32" DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-32.png"/>
+          <bt:Image id="Icon80" DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-80.png"/>
+        </bt:Images>
+        <bt:Urls>
+          <bt:Url id="WebRuntime.Url" DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.html"/>
+          <bt:Url id="JavaScriptRuntime.Url" DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.js"/>
+        </bt:Urls>
+      </Resources>
+    </VersionOverrides>
+  </VersionOverrides>
+</OfficeApp>

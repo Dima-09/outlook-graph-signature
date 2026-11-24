@@ -1,11 +1,11 @@
 function onNewMessageComposeHandler(event) {
-  console.log('BDO: Compose event started');
+  console.log('BDO: Event started');
 
   try {
     Office.context.mailbox.item.body.setSignatureAsync(
-      '<div><strong>TEST SIGNATURE</strong></div>',
+      'TEST',
       {
-        coercionType: Office.CoercionType.Html,
+        coercionType: Office.CoercionType.Text,
       },
       function (result) {
         if (result.status === Office.AsyncResultStatus.Succeeded) {
@@ -24,9 +24,3 @@ function onNewMessageComposeHandler(event) {
 }
 
 Office.actions.associate('onNewMessageComposeHandler', onNewMessageComposeHandler);
-
-// Если в установленном XML осталось второе событие,
-// оно не должно повторно вставлять подпись.
-Office.actions.associate('onMessageRecipientsChangedHandler', function (event) {
-  event.completed();
-});

@@ -8,7 +8,7 @@
 
   <!-- Replace only this GUID with your permanent add-in ID. -->
   <Id>1fc85d51-adc1-4c34-b237-4ae862c61f56</Id>
-  <Version>1.0.0.0</Version>
+  <Version>1.0.0.1</Version>
   <ProviderName>BDO Qazaqstan</ProviderName>
   <DefaultLocale>ru-RU</DefaultLocale>
   <DisplayName DefaultValue="BDO Auto Signature DEV"/>

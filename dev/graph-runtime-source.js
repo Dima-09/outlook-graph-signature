@@ -1,11 +1,12 @@
 import { getUserProfile } from './graph-auth.js';
+import { buildSignature } from './signature-template.js';
 
-function setSignature(text) {
+function setSignature(html) {
   return new Promise((resolve, reject) => {
     Office.context.mailbox.item.body.setSignatureAsync(
-      text,
+      html,
       {
-        coercionType: Office.CoercionType.Text,
+        coercionType: Office.CoercionType.Html,
       },
       (result) => {
         if (result.status === Office.AsyncResultStatus.Succeeded) {
@@ -20,19 +21,21 @@ function setSignature(text) {
 
 async function onNewMessageComposeHandler(event) {
   try {
+    console.log('BDO: Event started');
+
     const user = await getUserProfile(false);
 
-    const signature = ['GRAPH OK', user.displayName, user.jobTitle, user.department, user.mail, ...(user.businessPhones || []), user.mobilePhone].filter(Boolean).join('\n');
+    if (!user.displayName || !user.displayName.trim()) {
+      throw new Error('User display name is missing');
+    }
+
+    const signature = buildSignature(user);
 
     await setSignature(signature);
-  } catch (error) {
-    console.log('Graph error:', error);
 
-    try {
-      await setSignature('GRAPH ERROR: ' + (error.errorCode || error.code || error.name || 'Unknown'));
-    } catch (signatureError) {
-      console.log(signatureError);
-    }
+    console.log('BDO: Signature inserted successfully');
+  } catch (error) {
+    console.error('BDO: Signature error', error.errorCode || error.code || error.name || 'Unknown');
   } finally {
     event.completed();
   }

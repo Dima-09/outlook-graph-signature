@@ -11,25 +11,26 @@
   <Version>1.0.0.3</Version>
   <ProviderName>BDO Qazaqstan</ProviderName>
   <DefaultLocale>ru-RU</DefaultLocale>
-  <DisplayName DefaultValue="BDO Auto Signature DEV"/>
-  <Description DefaultValue="Automatic corporate email signature for Outlook"/>
+  <DisplayName DefaultValue="BDO Auto Signature DEV" />
+  <Description DefaultValue="Automatic corporate email signature for Outlook" />
 
-  <IconUrl DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-80.png"/>
-  <SupportUrl DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.html"/>
+  <IconUrl DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-32.png" />
+  <HighResolutionIconUrl
+    DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-80.png" />
+  <SupportUrl DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.html" />
 
   <AppDomains>
     <AppDomain>https://dima-09.github.io</AppDomain>
   </AppDomains>
 
   <Hosts>
-    <Host Name="Mailbox"/>
+    <Host Name="Mailbox" />
   </Hosts>
 
   <!-- Base requirement, in the default OfficeApp XML namespace. -->
   <Requirements>
     <Sets DefaultMinVersion="1.1">
-      <Set Name="Mailbox"/>
+      <Set Name="Mailbox" />
     </Sets>
   </Requirements>
 
@@ -37,23 +38,26 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.html"/>
+        <SourceLocation
+          DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.html" />
         <RequestedHeight>250</RequestedHeight>
       </DesktopSettings>
     </Form>
   </FormSettings>
 
   <Permissions>ReadWriteItem</Permissions>
-  <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
+  <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read" />
   <DisableEntityHighlighting>true</DisableEntityHighlighting>
 
-  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
-    <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1" xsi:type="VersionOverridesV1_1">
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides"
+    xsi:type="VersionOverridesV1_0">
+    <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1"
+      xsi:type="VersionOverridesV1_1">
       <!-- Mobile requires a lower minimum than desktop's OnNewMessageCompose API. -->
       <Requirements>
-          <bt:Sets DefaultMinVersion="1.5">
-              <bt:Set Name="Mailbox"/>
-          </bt:Sets>
+        <bt:Sets DefaultMinVersion="1.5">
+          <bt:Set Name="Mailbox" />
+        </bt:Sets>
       </Requirements>
       <Hosts>
         <Host xsi:type="MailHost">
@@ -61,55 +65,55 @@
             <!-- Browser runtime: Outlook Web, new Outlook, and mobile. -->
             <Runtime resid="WebRuntime.Url">
               <!-- Classic Outlook requires a JS-only bundle at this URL. -->
-              <Override type="javascript" resid="JavaScriptRuntime.Url"/>
+              <Override type="javascript" resid="JavaScriptRuntime.Url" />
             </Runtime>
           </Runtimes>
 
           <DesktopFormFactor>
 
-<FunctionFile resid="WebRuntime.Url"/>
+            <FunctionFile resid="WebRuntime.Url" />
 
-<ExtensionPoint xsi:type="MessageComposeCommandSurface">
-    <OfficeTab id="TabDefault">
-        <Group id="BDO.Signature.Group">
-            <Label resid="Group.Label"/>
+            <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+              <OfficeTab id="TabDefault">
+                <Group id="BDO.Signature.Group">
+                  <Label resid="Group.Label" />
 
-            <Control xsi:type="Button" id="BDO.SignIn">
-                <Label resid="SignIn.Label"/>
+                  <Control xsi:type="Button" id="BDO.SignIn">
+                    <Label resid="SignIn.Label" />
 
-                <Supertip>
-                    <Title resid="SignIn.Label"/>
-                    <Description resid="SignIn.Description"/>
-                </Supertip>
+                    <Supertip>
+                      <Title resid="SignIn.Label" />
+                      <Description resid="SignIn.Description" />
+                    </Supertip>
 
-                <Icon>
-                    <bt:Image size="16" resid="Icon16"/>
-                    <bt:Image size="32" resid="Icon32"/>
-                    <bt:Image size="80" resid="Icon80"/>
-                </Icon>
+                    <Icon>
+                      <bt:Image size="16" resid="Icon16" />
+                      <bt:Image size="32" resid="Icon32" />
+                      <bt:Image size="80" resid="Icon80" />
+                    </Icon>
 
-                <Action xsi:type="ShowTaskpane">
-                    <SourceLocation resid="SignIn.Url"/>
-                </Action>
-            </Control>
-        </Group>
-    </OfficeTab>
-</ExtensionPoint>
+                    <Action xsi:type="ShowTaskpane">
+                      <SourceLocation resid="SignIn.Url" />
+                    </Action>
+                  </Control>
+                </Group>
+              </OfficeTab>
+            </ExtensionPoint>
 
             <ExtensionPoint xsi:type="LaunchEvent">
               <LaunchEvents>
-                <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler"/>
+                <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler" />
               </LaunchEvents>
-              <SourceLocation resid="WebRuntime.Url"/>
+              <SourceLocation resid="WebRuntime.Url" />
             </ExtensionPoint>
           </DesktopFormFactor>
 
           <MobileFormFactor>
             <ExtensionPoint xsi:type="LaunchEvent">
               <LaunchEvents>
-                <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler"/>
+                <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler" />
               </LaunchEvents>
-              <SourceLocation resid="WebRuntime.Url"/>
+              <SourceLocation resid="WebRuntime.Url" />
             </ExtensionPoint>
           </MobileFormFactor>
         </Host>
@@ -117,27 +121,33 @@
 
       <Resources>
         <bt:Images>
-          <bt:Image id="Icon16" DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-16.png"/>
-          <bt:Image id="Icon32" DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-32.png"/>
-          <bt:Image id="Icon80" DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-80.png"/>
+          <bt:Image id="Icon16"
+            DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-16.png" />
+          <bt:Image id="Icon32"
+            DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-32.png" />
+          <bt:Image id="Icon80"
+            DefaultValue="https://dima-09.github.io/outlook-graph-signature/icon-80.png" />
         </bt:Images>
         <bt:Urls>
-          <bt:Url id="WebRuntime.Url" DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.html"/>
-          <bt:Url id="JavaScriptRuntime.Url" DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.js"/>
-          <bt:Url id="SignIn.Url" DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/signin.html"/>
+          <bt:Url id="WebRuntime.Url"
+            DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.html" />
+          <bt:Url id="JavaScriptRuntime.Url"
+            DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.js" />
+          <bt:Url id="SignIn.Url"
+            DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/signin.html" />
         </bt:Urls>
         <bt:ShortStrings>
-    <bt:String id="Group.Label"
-        DefaultValue="BDO Auto Signature"/>
+          <bt:String id="Group.Label"
+            DefaultValue="BDO Auto Signature" />
 
-    <bt:String id="SignIn.Label"
-        DefaultValue="Sign in"/>
-</bt:ShortStrings>
+          <bt:String id="SignIn.Label"
+            DefaultValue="Sign in" />
+        </bt:ShortStrings>
 
-<bt:LongStrings>
-    <bt:String id="SignIn.Description"
-        DefaultValue="Connect to Microsoft Graph"/>
-</bt:LongStrings>
+        <bt:LongStrings>
+          <bt:String id="SignIn.Description"
+            DefaultValue="Connect to Microsoft Graph" />
+        </bt:LongStrings>
       </Resources>
     </VersionOverrides>
   </VersionOverrides>

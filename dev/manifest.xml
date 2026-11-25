@@ -8,7 +8,7 @@
 
   <!-- Replace only this GUID with your permanent add-in ID. -->
   <Id>1fc85d51-adc1-4c34-b237-4ae862c61f56</Id>
-  <Version>1.0.0.3</Version>
+  <Version>1.0.0.4</Version>
   <ProviderName>BDO Qazaqstan</ProviderName>
   <DefaultLocale>ru-RU</DefaultLocale>
   <DisplayName DefaultValue="BDO Auto Signature DEV" />
@@ -130,9 +130,9 @@
         </bt:Images>
         <bt:Urls>
           <bt:Url id="WebRuntime.Url"
-            DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.html" />
+            DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/graph-runtime.html" />
           <bt:Url id="JavaScriptRuntime.Url"
-            DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.js" />
+            DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/graph-runtime.js" />
           <bt:Url id="SignIn.Url"
             DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/signin.html" />
         </bt:Urls>

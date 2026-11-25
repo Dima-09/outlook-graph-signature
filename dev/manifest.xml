@@ -8,7 +8,7 @@
 
   <!-- Replace only this GUID with your permanent add-in ID. -->
   <Id>1fc85d51-adc1-4c34-b237-4ae862c61f56</Id>
-  <Version>1.0.0.2</Version>
+  <Version>1.0.0.3</Version>
   <ProviderName>BDO Qazaqstan</ProviderName>
   <DefaultLocale>ru-RU</DefaultLocale>
   <DisplayName DefaultValue="BDO Auto Signature DEV"/>
@@ -66,6 +66,36 @@
           </Runtimes>
 
           <DesktopFormFactor>
+
+<FunctionFile resid="WebRuntime.Url"/>
+
+<ExtensionPoint xsi:type="MessageComposeCommandSurface">
+    <OfficeTab id="TabDefault">
+        <Group id="BDO.Signature.Group">
+            <Label resid="Group.Label"/>
+
+            <Control xsi:type="Button" id="BDO.SignIn">
+                <Label resid="SignIn.Label"/>
+
+                <Supertip>
+                    <Title resid="SignIn.Label"/>
+                    <Description resid="SignIn.Description"/>
+                </Supertip>
+
+                <Icon>
+                    <bt:Image size="16" resid="Icon16"/>
+                    <bt:Image size="32" resid="Icon32"/>
+                    <bt:Image size="80" resid="Icon80"/>
+                </Icon>
+
+                <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="SignIn.Url"/>
+                </Action>
+            </Control>
+        </Group>
+    </OfficeTab>
+</ExtensionPoint>
+
             <ExtensionPoint xsi:type="LaunchEvent">
               <LaunchEvents>
                 <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler"/>
@@ -94,7 +124,20 @@
         <bt:Urls>
           <bt:Url id="WebRuntime.Url" DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.html"/>
           <bt:Url id="JavaScriptRuntime.Url" DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/commands.js"/>
+          <bt:Url id="SignIn.Url" DefaultValue="https://dima-09.github.io/outlook-graph-signature/dev/signin.html"/>
         </bt:Urls>
+        <bt:ShortStrings>
+    <bt:String id="Group.Label"
+        DefaultValue="BDO Auto Signature"/>
+
+    <bt:String id="SignIn.Label"
+        DefaultValue="Sign in"/>
+</bt:ShortStrings>
+
+<bt:LongStrings>
+    <bt:String id="SignIn.Description"
+        DefaultValue="Connect to Microsoft Graph"/>
+</bt:LongStrings>
       </Resources>
     </VersionOverrides>
   </VersionOverrides>

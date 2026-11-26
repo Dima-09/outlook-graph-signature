@@ -11,7 +11,19 @@ export function buildSignature(user) {
 
   const jobTitle = escapeHtml(user.jobTitle);
 
-  const company = escapeHtml(normalize(user.department) || 'BDO Qazaqstan');
+  const companyName = normalize(user.department) || 'BDO Qazaqstan';
+  const company = escapeHtml(companyName);
+
+  const companyPhones = {
+    'BDO Qazaqstan': '+7 727 331 31 34',
+    'BDO Outsourcing Qazaqstan': '+7 727 331 31 37',
+  };
+
+  const officePhone = companyPhones[companyName] || companyPhones['BDO Qazaqstan'];
+
+  const extension = escapeHtml(user.businessPhones?.[0]);
+
+  const directPhone = extension ? `Direct: ${officePhone} ext. ${extension}` : '';
 
   const mobilePhone = escapeHtml(user.mobilePhone);
   const email = normalize(user.mail);
@@ -42,7 +54,7 @@ export function buildSignature(user) {
             6A Gabdullin Street<br>
             A15H4E3, Almaty<br>
             KAZAKHSTAN<br>
-            Tel: +7 727 331 31 34<br>
+            Tel: ${officePhone}<br>
 
             <a href="https://www.bdoqz.com"
                style="color: #e81a3b; text-decoration: underline;">

@@ -15,11 +15,13 @@ export function buildSignature(user) {
   const company = escapeHtml(companyName);
 
   const companyPhones = {
-    'BDO Qazaqstan': '+7 727 331 31 34',
-    'BDO Outsourcing Qazaqstan': '+7 727 331 31 37',
+    'bdo qazaqstan': '+7 727 331 31 34',
+    'bdo outsourcing qazaqstan': '+7 727 331 31 37',
   };
 
-  const officePhone = companyPhones[companyName] || companyPhones['BDO Qazaqstan'];
+  const companyKey = companyName.toLowerCase().replace(/\s+/g, ' ');
+
+  const officePhone = companyPhones[companyKey] || companyPhones['bdo qazaqstan'];
 
   const extension = escapeHtml(user.businessPhones?.[0]);
 
@@ -37,7 +39,7 @@ export function buildSignature(user) {
       : escapeHtml(email)
     : '';
 
-  const personalLines = [name ? `<strong>${name}</strong>` : '', jobTitle, company, mobilePhone ? `Mobile: ${mobilePhone}` : '', emailHtml].filter(Boolean).join('<br>');
+  const personalLines = [name ? `<strong>${name}</strong>` : '', jobTitle, company, directPhone, mobilePhone ? `Mobile: ${mobilePhone}` : '', emailHtml].filter(Boolean).join('<br>');
 
   return `
         <div style="

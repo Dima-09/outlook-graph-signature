@@ -2,9 +2,11 @@
   "name": "outlook-graph-signature",
   "version": "1.0.0",
   "description": "Автоматическое формрование подписи",
-  "main": "commands.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:dev": "node scripts/build.cjs dev",
+    "build:prod": "node scripts/build.cjs prod",
+    "build:all": "node scripts/build.cjs all",
+    "test": "node --test tests/*.test.cjs"
   },
   "repository": {
     "type": "git",

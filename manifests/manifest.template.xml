@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides"
+  xsi:type="MailApp">
+
+  <Id>{{addinId}}</Id>
+  <Version>{{manifestVersion}}</Version>
+  <ProviderName>BDO Qazaqstan</ProviderName>
+  <DefaultLocale>ru-RU</DefaultLocale>
+  <DisplayName DefaultValue="{{displayName}}" />
+  <Description DefaultValue="Automatic corporate email signature for Outlook" />
+
+  <IconUrl DefaultValue="{{icon32Url}}" />
+  <HighResolutionIconUrl
+    DefaultValue="{{icon80Url}}" />
+  <SupportUrl DefaultValue="{{commandsUrl}}" />
+
+  <AppDomains>
+    <AppDomain>{{origin}}</AppDomain>
+  </AppDomains>
+
+  <Hosts>
+    <Host Name="Mailbox" />
+  </Hosts>
+
+  <!-- Base requirement, in the default OfficeApp XML namespace. -->
+  <Requirements>
+    <Sets DefaultMinVersion="1.1">
+      <Set Name="Mailbox" />
+    </Sets>
+  </Requirements>
+
+  <!-- Required in add-in-only manifests even when VersionOverrides is used. -->
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation
+          DefaultValue="{{commandsUrl}}" />
+        <RequestedHeight>250</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+
+  <Permissions>ReadWriteItem</Permissions>
+  <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read" />
+  <DisableEntityHighlighting>true</DisableEntityHighlighting>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides"
+    xsi:type="VersionOverridesV1_0">
+    <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1"
+      xsi:type="VersionOverridesV1_1">
+      <!-- Mobile requires a lower minimum than desktop's OnNewMessageCompose API. -->
+      <Requirements>
+        <bt:Sets DefaultMinVersion="1.5">
+          <bt:Set Name="Mailbox" />
+        </bt:Sets>
+      </Requirements>
+      <Hosts>
+        <Host xsi:type="MailHost">
+          <Runtimes>
+            <!-- Browser runtime: Outlook Web, new Outlook, and mobile. -->
+            <Runtime resid="WebRuntime.Url">
+              <!-- Classic Outlook requires a JS-only bundle at this URL. -->
+              <Override type="javascript" resid="JavaScriptRuntime.Url" />
+            </Runtime>
+          </Runtimes>
+
+          <DesktopFormFactor>
+
+            <FunctionFile resid="WebRuntime.Url" />
+
+            <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+              <OfficeTab id="TabDefault">
+                <Group id="BDO.Signature.Group">
+                  <Label resid="Group.Label" />
+
+                  <Control xsi:type="Button" id="BDO.SignIn">
+                    <Label resid="SignIn.Label" />
+
+                    <Supertip>
+                      <Title resid="SignIn.Label" />
+                      <Description resid="SignIn.Description" />
+                    </Supertip>
+
+                    <Icon>
+                      <bt:Image size="16" resid="Icon16" />
+                      <bt:Image size="32" resid="Icon32" />
+                      <bt:Image size="80" resid="Icon80" />
+                    </Icon>
+
+                    <Action xsi:type="ShowTaskpane">
+                      <SourceLocation resid="SignIn.Url" />
+                    </Action>
+                  </Control>
+                </Group>
+              </OfficeTab>
+            </ExtensionPoint>
+
+            <ExtensionPoint xsi:type="LaunchEvent">
+              <LaunchEvents>
+                <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler" />
+              </LaunchEvents>
+              <SourceLocation resid="WebRuntime.Url" />
+            </ExtensionPoint>
+          </DesktopFormFactor>
+
+          <MobileFormFactor>
+            <ExtensionPoint xsi:type="LaunchEvent">
+              <LaunchEvents>
+                <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler" />
+              </LaunchEvents>
+              <SourceLocation resid="WebRuntime.Url" />
+            </ExtensionPoint>
+          </MobileFormFactor>
+        </Host>
+      </Hosts>
+
+      <Resources>
+        <bt:Images>
+          <bt:Image id="Icon16"
+            DefaultValue="{{icon16Url}}" />
+          <bt:Image id="Icon32"
+            DefaultValue="{{icon32Url}}" />
+          <bt:Image id="Icon80"
+            DefaultValue="{{icon80Url}}" />
+        </bt:Images>
+        <bt:Urls>
+          <bt:Url id="WebRuntime.Url"
+            DefaultValue="{{webRuntimeUrl}}" />
+          <bt:Url id="JavaScriptRuntime.Url"
+            DefaultValue="{{javascriptRuntimeUrl}}" />
+          <bt:Url id="SignIn.Url"
+            DefaultValue="{{signinUrl}}" />
+        </bt:Urls>
+        <bt:ShortStrings>
+          <bt:String id="Group.Label"
+            DefaultValue="BDO Auto Signature" />
+
+          <bt:String id="SignIn.Label"
+            DefaultValue="Sign in" />
+        </bt:ShortStrings>
+
+        <bt:LongStrings>
+          <bt:String id="SignIn.Description"
+            DefaultValue="Connect to Microsoft Graph" />
+        </bt:LongStrings>
+      </Resources>
+    </VersionOverrides>
+  </VersionOverrides>
+</OfficeApp>

@@ -1,0 +1,9 @@
+{
+  "configured": false,
+  "baseUrl": "https://signature-prod.example.invalid/",
+  "clientId": "11111111-1111-4111-8111-111111111111",
+  "authority": "https://login.example.invalid/22222222-2222-4222-8222-222222222222",
+  "addinId": "d59909a2-fdfd-463d-a995-b5462afaadb3",
+  "displayName": "BDO Auto Signature",
+  "manifestVersion": "1.0.0.0"
+}

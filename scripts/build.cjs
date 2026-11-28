@@ -177,7 +177,7 @@ function validateOutput(directory, config, expectedManifest) {
   if (fs.readFileSync(path.join(directory, 'commands.html'), 'utf8').includes('commands.js')) throw new Error('Legacy commands.js must not be included.');
   const allowed = JSON.parse(fs.readFileSync(path.join(directory, '.well-known/microsoft-officeaddins-allowed.json'), 'utf8'));
   const runtimeUrl = resourceValues(config).javascriptRuntimeUrl;
-  if (JSON.stringify(allowed) !== JSON.stringify({ allowed: [runtimeUrl] }) || !xml.includes(`id="JavaScriptRuntime.Url"\n            DefaultValue="${escapeXml(runtimeUrl)}"`)) {
+  if (JSON.stringify(allowed) !== JSON.stringify({ allowed: [runtimeUrl] }) || !xml.replace(/\r\n/g, '\n').includes(`id="JavaScriptRuntime.Url"\n            DefaultValue="${escapeXml(runtimeUrl)}"`)) {
     throw new Error('The allowed runtime URL must match the manifest exactly.');
   }
 }

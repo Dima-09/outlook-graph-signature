@@ -1,180 +1,36 @@
-# ARCHITECTURE.md — архитектура Outlook Graph Signature
+# Архитектура Outlook Graph Signature
 
-Документ описывает реализованное устройство приложения и принятые архитектурные
-решения. Команды и контракт конфигурации находятся в [README.md](README.md),
-состояние миграции и критерии её завершения — в [REFACTORING.md](REFACTORING.md).
-Наличие реализации не означает успешного тестирования в установленном Outlook.
+Outlook загружает клиентское приложение по HTTPS. Office.js предоставляет контекст письма, MSAL Browser получает токен через Nested App Authentication (NAA), Microsoft Graph возвращает профиль. На Cloudflare работают два независимых Workers со статическими ресурсами. GitHub хранит исходники.
 
-## Структура и границы приложения
-
-Один репозиторий, одна постоянная ветка `main`, общая кодовая база.
-DEV и PROD отличаются конфигурациями и результатами сборки. Приложение клиентское:
-Office.js, Microsoft Graph, Microsoft Entra ID и MSAL Browser / NAA; backend отсутствует.
+## Структура репозитория
 
 | Путь | Назначение |
 | --- | --- |
-| `src/graph-runtime-source.js` | Событийный обработчик автоматической подписи |
-| `src/signin-source.js` | Отдельная панель Sign in |
-| `src/graph-auth.js` | NAA/MSAL, получение токена и профиля Microsoft Graph |
-| `src/authconfig.js` | Настройки авторизации с константами, подставляемыми при сборке |
-| `src/signature-template.js` | Формирование HTML-подписи без сетевых запросов |
-| `config/dev.json`, `config/prod.json` | Публичные параметры окружений |
-| `public/` | Общие HTML и иконки для копирования в комплект |
-| `manifests/manifest.template.xml` | Общий XML-шаблон на основе прежнего DEV-манифеста |
-| `webpack.config.js` | Фабрика конфигураций для двух независимых компиляций |
-| `scripts/build.cjs` | Валидация, компиляция, генерация ресурсов и замена выбранного результата |
-| `tests/build.test.cjs`, `tests/signature.test.cjs` | Офлайн-проверки сборщика и соответствия прежней реализации |
-| `package.json`, `package-lock.json` | Команды, зависимости и зафиксированные версии |
-| `.gitignore` | Исключения для зависимостей, локальных env-файлов и `dist/` |
-| `dist/dev/`, `dist/prod/` | Генерируемые комплекты, не включаемые в Git |
-| `dev/`, корневые `manifest.xml`, `commands.*`, `icon-*.png` | Замороженные файлы прежней публикации GitHub Pages |
+| `src/graph-runtime-source.js` | Регистрация обработчика Office и вставка подписи |
+| `src/signin-source.js` | Панель интерактивного входа |
+| `src/graph-auth.js`, `src/authconfig.js` | Получение токена, запрос профиля и параметры MSAL |
+| `src/signature-template.js` | Экранирование полей, оформление и текст подписи |
+| `config/dev.json`, `config/prod.json` | Публичные параметры сред |
+| `public/` | HTML событийного runtime, панели и страницы commands, иконки 16/32/80 |
+| `manifests/manifest.template.xml` | Общий XML-шаблон Outlook |
+| `scripts/build.cjs`, `webpack.config.js` | Валидация, две компиляции Webpack и упаковка результата |
+| `tests/build.test.cjs`, `tests/signature.test.cjs` | Проверки сборщика и подписи на фиктивных профилях |
+| `package.json`, `package-lock.json`, `.gitignore` | Команды, дерево зависимостей и исключения Git |
+| `dist/dev/`, `dist/prod/` | Генерируемые комплекты |
 
-Старый `dev/` содержит и исходники, и бандлы. Он не является второй поддерживаемой
-кодовой базой: новая сборка не читает его, но тесты используют его как контрольную
-версию. Отдельного `webpack.graph.config.js` в текущей структуре нет.
+## От создания письма до вставки подписи
 
-## Выполнение надстройки
+1. Outlook активирует `OnNewMessageCompose`. Манифест связывает его с `onNewMessageComposeHandler`, зарегистрированным через `Office.actions.associate`.
+2. `getUserProfile(false)` запрашивает токен с делегированным `User.Read`. MSAL создаёт nestable public client и вызывает `acquireTokenSilent`. В панели Sign in используется `getUserProfile(true)`, где после `InteractionRequiredAuthError` допускается `acquireTokenPopup`.
+3. Клиент отправляет Bearer-токен в `GET https://graph.microsoft.com/v1.0/me`. Параметр `$select` перечисляет `displayName,jobTitle,department,companyName,mail,userPrincipalName,businessPhones,mobilePhone`. Панель показывает ответ или ошибку. Событийный обработчик требует непустой `displayName`.
+4. Шаблон экранирует пользовательские строки, берёт компанию из `department` с резервным значением BDO Qazaqstan, добавочный номер из первого `businessPhones`, адрес почты из `mail`. Обработчик вставляет HTML через `setSignatureAsync`. При ошибке он записывает её код или имя и завершает событие вызовом `event.completed()` в `finally`.
 
-```text
-OnNewMessageCompose
-  → onNewMessageComposeHandler(event)
-  → getUserProfile(false)
-  → NAA/MSAL → Entra ID → токен User.Read
-  → Microsoft Graph /v1.0/me
-  → buildSignature(user)
-  → Office.js setSignatureAsync()
-  → event.completed() в finally
-```
+Манифест запрашивает у Outlook `ReadWriteItem`. Базовый Mailbox — 1.1, в VersionOverrides — 1.5. Для Classic Outlook предусмотрен JavaScript override. Браузерный runtime загружает HTML и Office.js. Событие объявлено в desktop и mobile, кнопка Sign in — только в DesktopFormFactor. Страница `commands.html` используется в SupportUrl и FormSettings. Требования событий, NAA и версий клиентов проверяются при приёмке по [DEPLOYMENT.md](DEPLOYMENT.md).
 
-Обработчик зарегистрирован через `Office.actions.associate`. Он проверяет наличие
-непустого `displayName`, вставляет HTML-подпись и при ошибке выводит её код/имя.
-Завершение события вызывается в `finally` независимо от результата.
+## Контракт сборки
 
-`getAccessToken` сначала использует `acquireTokenSilent`. Popup допускается только
-при `interactive: true` и `InteractionRequiredAuthError`. Автоматический обработчик
-вызывает неинтерактивный путь. Панель Sign in вызывает `getUserProfile(true)`
-и отображает профиль или ошибку; сама подпись из панели не вставляется.
+Сборщик проверяет типы, обязательные поля, UUID, HTTPS URL и версию манифеста. При `configured: true` он отклоняет домены `.invalid` и известные тестовые UUID. При `false` он разрешает сборку с предупреждением. Список полей и порядок их заполнения приведены в [DEPLOYMENT.md](DEPLOYMENT.md).
 
-Graph использует делегированное разрешение `User.Read` и запрос `/v1.0/me`
-с `$select`: `displayName,jobTitle,department,companyName,mail,userPrincipalName,businessPhones,mobilePhone`.
-В манифесте разрешение Office — `ReadWriteItem`; это отдельный от Graph контракт.
+Webpack в режиме production подставляет Client ID и authority через DefinePlugin и последовательно создаёт два самодостаточных файла — `graph-runtime.js` и `signin.js`. Сборщик копирует публичные ресурсы, сохраняет созданные Webpack лицензии, подставляет экранированные значения в XML и записывает URL событийного JS в `.well-known/microsoft-officeaddins-allowed.json`. Он проверяет состав комплекта и ссылки до замены выходного каталога. Публичные адреса вычисляются от `baseUrl`.
 
-Шаблон подписи нормализует строки и экранирует HTML. Компания берётся из `department`
-с fallback `BDO Qazaqstan`; телефон компании выбирается по нормализованному названию,
-первый `businessPhones` используется как добавочный номер. Email берётся из `mail`
-без fallback на `userPrincipalName`. Форматирование, юридический текст и правила
-обработки пустых значений относятся к бизнес-логике и сохраняются.
-
-Манифест содержит HTML runtime и JavaScript override для Classic Outlook,
-событие `OnNewMessageCompose` для desktop/mobile, базовое требование Mailbox 1.1
-и Mailbox 1.5 в VersionOverrides. Кнопка Sign in описана только в
-`DesktopFormFactor`: наличие мобильного события не означает наличия мобильной кнопки.
-Фактическая поддержка зависит от клиента и требует проверки в реальной среде.
-
-`public/commands.html` остаётся ресурсом `SupportUrl` и `FormSettings`.
-Он не подключает старый `commands.js`; статическая подпись из старой реализации
-в новый комплект не включается.
-
-## Сборка
-
-```text
-config/<target>.json + общий XML-шаблон
-  → валидация конфигурации и маркеров
-  → блокировка выбранной среды и временный каталог в dist/
-  → две последовательные компиляции общих src/
-  → копирование public/, генерация manifest.xml и .well-known JSON
-  → проверка комплекта
-  → замена только dist/<target>/
-```
-
-Webpack через `DefinePlugin` и `JSON.stringify` встраивает Client ID и authority
-в оба бандла. Отдельный JSON конфигурации с сайта приложению не требуется.
-URL, GUID надстройки, название и версия подставляются в общий XML-шаблон
-с экранированием значений. Неизвестные, отсутствующие и незаменённые маркеры отклоняются.
-`AppDomain` получает origin; URL ресурсов строятся через `URL` с учётом пути `baseUrl`.
-Внешние URL Office.js и XML namespaces от окружения не зависят.
-
-Две точки входа имеют общие зависимости, но компилируются независимо:
-
-```text
-src/graph-runtime-source.js → graph-auth.js → authconfig.js + MSAL
-                           → signature-template.js
-                           → graph-runtime.js
-
-src/signin-source.js        → graph-auth.js → authconfig.js + MSAL
-                           → signin.js
-```
-
-Каждый бандл самодостаточен по собранным JS-зависимостям. Office.js остаётся внешним
-API хоста/CDN. Для каждой компиляции заданы `splitChunks: false`, `runtimeChunk: false`
-и `LimitChunkCountPlugin({ maxChunks: 1 })`; сборщик дополнительно проверяет статистику.
-Это сохраняет запуск событийного JS runtime без загрузки дополнительных чанков.
-Предупреждение Webpack о размере бандла не является ошибкой; включение lazy loading
-потребовало бы отдельной проверки совместимости.
-
-Комплект каждой среды:
-
-```text
-dist/<target>/
-├── .well-known/microsoft-officeaddins-allowed.json
-├── manifest.xml
-├── graph-runtime.html
-├── graph-runtime.js
-├── graph-runtime.js.LICENSE.txt
-├── signin.html
-├── signin.js
-├── signin.js.LICENSE.txt
-├── commands.html
-├── icon-16.png
-├── icon-32.png
-└── icon-80.png
-```
-
-Лицензионные файлы, создаваемые Webpack, сохраняются. HTML содержит относительные
-ссылки на бандлы. JSON `.well-known` содержит `allowed` с точным публичным URL
-`graph-runtime.js`, согласованным с манифестом. Сборщик проверяет наличие ресурсов,
-конфигурацию JS и отсутствие дополнительных JS-файлов; синтаксическая и схемная
-проверки XML выполняются отдельно.
-
-## Независимость и сохранность результатов
-
-Выходные пути жёстко ограничены `dist/dev/` и `dist/prod/`. Сборка одной среды
-не заменяет другую и не изменяет прежнюю публикацию. `build:all` последовательно
-собирает среды; общей транзакции для двух результатов нет: ошибка PROD не отменяет
-уже завершённую сборку DEV.
-
-Перед заменой результат компилируется и проверяется во временном каталоге.
-Прежняя папка переносится в резервную; если установка новой папки не удаётся,
-сборщик пытается восстановить резервную. Ошибки завершаются ненулевым кодом.
-Проверки путей запрещают ссылки/junction в управляемых выходных каталогах.
-
-Блокировки `dist/.lock-dev` и `dist/.lock-prod` предотвращают одновременную сборку
-одной среды. После аварийного завершения процесса блокировка может остаться;
-перед её ручным удалением нужно убедиться, что сборщик больше не работает.
-При прерывании во время замены следует проверить `.backup-<target>-…` внутри `dist/`:
-там может находиться предыдущий результат. Эти меры не гарантируют автоматического
-восстановления после любого аварийного завершения процесса.
-
-## Хостинг как отдельная операция
-
-Выбран Cloudflare Workers Static Assets вместо Cloudflare Pages. Для DEV и PROD
-предполагаются отдельные Workers и отдельные origin. Cloudflare размещает только
-статические файлы; серверная логика Worker не требуется. Публикация ручная,
-без Wrangler, Cloudflare API, интеграции с GitHub и автоматического deploy.
-Это принятая схема размещения, а не подтверждение её настройки или тестирования.
-
-Архитектура не зависит от провайдера: сборщик создаёт обычный статический комплект
-и использует `baseUrl`, не обращаясь к API хостинга. Локальные `dist/dev` и `dist/prod`
-не становятся автоматически частью публичных URL. При размещении в корне origin
-публикуется содержимое соответствующего выходного каталога.
-
-`.well-known/microsoft-officeaddins-allowed.json` должен обслуживаться в корне origin.
-Если приложение расположено в подкаталоге, этот JSON всё равно нужно разместить
-в корне origin отдельно. При общем origin для нескольких runtime потребуется
-общий JSON с разрешёнными URL; сборщик создаёт JSON только для одной среды.
-Целевой сценарий с отдельными origin позволяет избежать такого объединения.
-
-Смена origin требует согласовать URL манифеста, параметры регистрации Entra/NAA,
-корневой `.well-known` и установку надстройки. Сборщик не меняет Entra ID,
-Microsoft 365 или настройки хостинга. Старый GitHub Pages продолжает обслуживать
-прежнюю надстройку до завершения миграции по [REFACTORING.md](REFACTORING.md).
+Каждая среда имеет отдельную блокировку и временный каталог. При замене результата сборщик временно сохраняет предыдущий каталог и пытается восстановить его при ошибке. Ссылки и junction в управляемых каталогах отклоняются. При аварийной остановке проверьте отсутствие активного сборщика и содержимое `dist/.backup-<target>-*` перед удалением оставшейся `.lock-<target>`. Команда `build:all` выполняет DEV и PROD последовательно. При ошибке PROD уже собранный DEV сохраняется.

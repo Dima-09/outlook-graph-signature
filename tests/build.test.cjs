@@ -42,25 +42,17 @@ async function fakeCompile({ outputPath, entry, config }) {
   return { assets: [{ name: `${entry}.js` }], chunks: [{ entry: true, initial: true }], warnings: [] };
 }
 
-test('Initial configurations preserve DEV identity and clearly separate PROD', () => {
+test('DEV and PROD use separate add-in IDs, client IDs and origins', () => {
   const dev = validateConfig(readConfig('dev'));
   const prod = validateConfig(readConfig('prod'));
-  const legacy = fs.readFileSync(path.join(root, 'dev/manifest.xml'), 'utf8');
-  const legacyAuth = fs.readFileSync(path.join(root, 'dev/authconfig.js'), 'utf8');
-  assert(legacy.includes(`<Id>${dev.addinId}</Id>`));
-  assert(legacy.includes(`<Version>${dev.manifestVersion}</Version>`));
-  assert(legacyAuth.includes(dev.clientId));
-  assert(legacyAuth.includes(dev.authority));
+  assert.notEqual(new URL(dev.baseUrl).origin, new URL(prod.baseUrl).origin);
   assert.notEqual(prod.addinId, dev.addinId);
   assert.notEqual(prod.clientId, dev.clientId);
-  assert(!fs.readFileSync(path.join(root, 'manifest.xml'), 'utf8').includes(prod.addinId));
-  assert.equal(dev.configured, false);
-  assert.equal(prod.configured, false);
 });
 
 test('URL normalization preserves subdirectories; AppDomain is origin only', () => {
   for (const baseUrl of ['https://example.invalid/nested/app', 'https://example.invalid/nested/app/']) {
-    const values = resourceValues(validateConfig({ ...readConfig('dev'), baseUrl }));
+    const values = resourceValues(validateConfig({ ...readConfig('dev'), configured: false, baseUrl }));
     assert.equal(values.origin, 'https://example.invalid');
     assert.equal(values.javascriptRuntimeUrl, 'https://example.invalid/nested/app/graph-runtime.js');
     assert.equal(values.icon16Url, 'https://example.invalid/nested/app/icon-16.png');
@@ -76,17 +68,22 @@ test('Invalid configuration fails without silently accepting placeholders or out
     { authority: 'https://login.microsoftonline.com/common' }, { authority: 'https://example.com/22222222-2222-4222-8222-222222222222' },
     { manifestVersion: '1.0.0' }, { manifestVersion: '1.0.0.65536' },
     { displayName: ' ' }, { displayName: '\u0001bad' }, { displayName: '{{name}}' },
-    { outputDir: '../dev' }, { configured: true },
+    { outputDir: '../dev' },
   ];
   for (const override of badValues) assert.throws(() => validateConfig({ ...readConfig('dev'), ...override }));
   const missing = readConfig('dev');
   delete missing.authority;
   assert.throws(() => validateConfig(missing), /authority/);
-  assert.throws(() => validateConfig({ ...readConfig('prod'), configured: true, baseUrl: 'https://example.com/' }), /test UUIDs/);
+  const ready = { ...readConfig('dev'), configured: true, baseUrl: 'https://app.example.org/',
+    authority: 'https://login.microsoftonline.com/aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
+    clientId: 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb', addinId: 'cccccccc-cccc-4ccc-cccc-cccccccccccc' };
+  assert.doesNotThrow(() => validateConfig(ready));
+  assert.throws(() => validateConfig({ ...ready, baseUrl: 'https://example.invalid/' }), /invalid URLs/);
+  assert.throws(() => validateConfig({ ...ready, clientId: '11111111-1111-4111-8111-111111111111' }), /test UUIDs/);
 });
 
 test('XML substitution escapes values, preserves the runtime contract and rejects incomplete templates', () => {
-  const config = validateConfig({ ...readConfig('dev'), displayName: 'Test & <Example> "Name"', baseUrl: 'https://example.invalid/sub/' });
+  const config = validateConfig({ ...readConfig('dev'), configured: false, displayName: 'Test & <Example> "Name"', baseUrl: 'https://example.invalid/sub/' });
   const xml = renderManifest(template, config);
   assert(xml.includes('Test &amp; &lt;Example&gt; &quot;Name&quot;'));
   assert.equal((xml.match(/Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler"/g) || []).length, 2);
@@ -96,7 +93,6 @@ test('XML substitution escapes values, preserves the runtime contract and reject
   assert(xml.includes('<bt:Sets DefaultMinVersion="1.5">'));
   assert(xml.includes('<Sets DefaultMinVersion="1.1">'));
   assert(xml.includes('<MobileFormFactor>'));
-  assert(!xml.includes('dima-09.github.io'));
   assert(!xml.includes('{{'));
   assert.throws(() => renderManifest(template + '{{unknown}}', config), /Unknown/);
   assert.throws(() => renderManifest(template.replace('{{addinId}}', 'fixed'), config), /Missing/);
@@ -104,11 +100,18 @@ test('XML substitution escapes values, preserves the runtime contract and reject
   assert.equal(escapeXml("<&\"'>"), '&lt;&amp;&quot;&apos;&gt;');
 });
 
-test('Manifest template changes only environment fields from the frozen DEV manifest', () => {
-  const config = validateConfig({ ...readConfig('dev'), baseUrl: 'https://dima-09.github.io/outlook-graph-signature/dev/' });
-  const rendered = renderManifest(template, config).replace(/outlook-graph-signature\/dev\/(icon-\d+\.png)/g, 'outlook-graph-signature/$1');
-  const legacy = fs.readFileSync(path.join(root, 'dev/manifest.xml'), 'utf8').replace('  <!-- Replace only this GUID with your permanent add-in ID. -->\n', '');
-  assert.equal(rendered, legacy);
+test('Manifest resource IDs resolve and all resource URLs use the selected environment', () => {
+  for (const target of ['dev', 'prod']) {
+    const config = validateConfig(readConfig(target));
+    const xml = renderManifest(template, config);
+    assert(xml.includes('<Id>' + config.addinId + '</Id>'));
+    assert(xml.includes('<Version>' + config.manifestVersion + '</Version>'));
+    const ids = new Set(Array.from(xml.matchAll(/\bid="([^"]+)"/g), match => match[1]));
+    for (const [, id] of xml.matchAll(/\bresid="([^"]+)"/g)) assert(ids.has(id), id);
+    const urls = Array.from(xml.matchAll(/DefaultValue="(https:[^"]+)"/g), match => match[1]);
+    const files = ['commands.html', 'graph-runtime.html', 'graph-runtime.js', 'signin.html', 'icon-16.png', 'icon-32.png', 'icon-80.png'];
+    assert.deepEqual(new Set(urls), new Set(files.map(file => new URL(file, config.baseUrl).href)));
+  }
 });
 
 test('Chunk validation rejects additional startup or lazy JavaScript', () => {
@@ -119,6 +122,7 @@ test('Chunk validation rejects additional startup or lazy JavaScript', () => {
 
 test('Build replaces only its own environment, keeps licenses and detects mismatched resources', async t => {
   const directory = fixture(t);
+  fs.writeFileSync(path.join(directory, 'config/dev.json'), JSON.stringify({ ...readConfig('dev'), configured: false }));
   const log = [];
   const options = { root: directory, compile: async args => {
     const stats = await fakeCompile(args);

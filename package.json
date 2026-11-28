@@ -23,7 +23,6 @@
     "@azure/msal-browser": "^5.30.0"
   },
   "devDependencies": {
-    "webpack": "^5.113.0",
-    "webpack-cli": "^7.3.1"
+    "webpack": "^5.113.0"
   }
 }
